@@ -1,34 +1,64 @@
-# Student Attendance Management System API
+# Classence - Student Attendance Management System
 
 A complete Node.js/Express backend API with MongoDB for managing student attendance with department-based data isolation.
 
-## Features
+## 🚀 Features
 
-- JWT Authentication
-- Role-based access (Students & Admins)
-- Department-based data isolation
-- Attendance tracking
-- Department updates/announcements
-- Admin dashboard with statistics
-- Attendance export functionality
+- **JWT Authentication** - Secure user authentication
+- **Role-based Access** - Students & Admins with different permissions
+- **Department Isolation** - Data separated by departments
+- **Digital Signatures** - Students sign digitally for attendance
+- **Multimedia Updates** - Admins can post text, images, and audio
+- **Real-time Dashboard** - Live attendance tracking
+- **Export Reports** - Download attendance data
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 - **Runtime**: Node.js with Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT (JSON Web Tokens)
-- **Password Security**: bcrypt for hashing
-- **Environment Variables**: dotenv
+- **Security**: bcrypt password hashing
+- **Environment**: dotenv configuration
 
-## Setup Instructions
+## 📋 API Endpoints
 
-1. **Install Dependencies**
+### Authentication
+- `POST /api/auth/register` - Student registration
+- `POST /api/auth/register-admin` - Admin registration
+- `POST /api/auth/login` - User login
+
+### Student Features
+- `GET /api/student/dashboard` - Dashboard data
+- `POST /api/student/attendance` - Mark attendance (one-click)
+- `GET /api/student/updates` - View department updates
+- `POST /api/profile/signature` - Save digital signature
+
+### Admin Features
+- `GET /api/admin/dashboard` - Admin statistics
+- `GET /api/admin/students` - List all students
+- `GET /api/admin/attendance/today` - Today's attendance table
+- `POST /api/admin/updates` - Post multimedia updates
+- `PUT /api/admin/updates/:id` - Edit updates
+- `DELETE /api/admin/updates/:id` - Delete updates
+
+### Shared
+- `GET /api/departments` - List all departments
+
+## 🔧 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yusufwahab/classence-backend.git
+   cd classence-backend
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. **Environment Variables**
-   Create a `.env` file with:
+3. **Environment Setup**
+   Create `.env` file:
    ```
    MONGODB_URI=your_mongodb_connection_string
    PORT=5000
@@ -36,65 +66,55 @@ A complete Node.js/Express backend API with MongoDB for managing student attenda
    ADMIN_CODE=your_admin_registration_code
    ```
 
-3. **Start Server**
+4. **Start the server**
    ```bash
    # Development
    npm run dev
    
    # Production
-   npm run serve
+   npm start
    ```
 
-## API Endpoints
+## 🌐 Deployment
 
-### Authentication
-- `POST /api/auth/register` - Student registration
-- `POST /api/auth/register-admin` - Admin registration with department creation
-- `POST /api/auth/login` - User login
+This backend is deployed on [Render](https://render.com) and ready for production use.
 
-### Student Endpoints (Authenticated)
-- `GET /api/student/dashboard` - Student dashboard data
-- `POST /api/student/attendance` - Mark attendance
-- `GET /api/student/updates` - View department updates
+## 📱 Frontend Integration
 
-### Admin Endpoints (Authenticated + Admin Role)
-- `GET /api/admin/dashboard` - Admin dashboard statistics
-- `GET /api/admin/students` - List all students with attendance
-- `POST /api/admin/updates` - Post department update
-- `GET /api/admin/attendance/export` - Export attendance report
+The backend supports any frontend framework. Check the API documentation for complete endpoint details and request/response formats.
 
-### Shared Endpoints
-- `GET /api/departments` - List all departments
+## 🔐 Security Features
 
-## Database Models
-
-### User
-- firstName, lastName, email, password (hashed)
-- role (student/admin)
-- departmentId (reference)
-
-### Department
-- name (unique)
-- adminId (reference)
-
-### Attendance
-- studentId, date, timeIn, status
-- Compound index on (studentId, date) for uniqueness
-
-### Update
-- departmentId, title, content, createdBy
-
-## Security Features
-
-- Password hashing with bcrypt (10 salt rounds)
-- JWT tokens with expiration
+- Password hashing with bcrypt
+- JWT token authentication
 - Role-based access control
 - Department-based data isolation
 - Input validation and sanitization
 
-## Testing
+## 📊 Database Models
 
-Use tools like Postman or Thunder Client to test the endpoints. All protected routes require the Authorization header:
-```
-Authorization: Bearer <jwt_token>
-```
+- **User** - Students and admins with profiles
+- **Department** - Academic departments
+- **Attendance** - Daily attendance records with signatures
+- **Update** - Multimedia announcements
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the ISC License.
+
+## 👨‍💻 Author
+
+**Yusuf Abdulwahab**
+- GitHub: [@yusufwahab](https://github.com/yusufwahab)
+
+---
+
+Built with ❤️ for educational institutions to streamline attendance management.
