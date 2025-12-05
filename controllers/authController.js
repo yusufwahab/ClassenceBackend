@@ -6,7 +6,7 @@ import Department from '../models/Department.js';
 
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, matricNumber, password, departmentId } = req.body;
+    const { firstName, lastName, middleName, email, matricNumber, password, departmentId } = req.body;
 
     if (!firstName || !lastName || !email || !matricNumber || !password || !departmentId) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -31,6 +31,7 @@ export const register = async (req, res) => {
     const user = new User({
       firstName,
       lastName,
+      middleName: middleName || null,
       email,
       matricNumber,
       password: hashedPassword,
@@ -53,7 +54,7 @@ export const register = async (req, res) => {
 
 export const registerAdmin = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, newDepartmentName, adminCode } = req.body;
+    const { firstName, lastName, middleName, email, password, newDepartmentName, adminCode } = req.body;
 
     if (!firstName || !lastName || !email || !password || !newDepartmentName || !adminCode) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -79,6 +80,7 @@ export const registerAdmin = async (req, res) => {
     const admin = new User({
       firstName,
       lastName,
+      middleName: middleName || null,
       email,
       password: hashedPassword,
       role: 'admin',
