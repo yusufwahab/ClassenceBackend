@@ -1,88 +1,39 @@
 import express from 'express';
-import dotenv from 'dotenv'
-import { connectDB } from './db.js';
-dotenv.config();
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import connectDB from './db.js';
 import authRoutes from './routes/auth.js';
+import studentRoutes from './routes/student.js';
+import adminRoutes from './routes/admin.js';
+import sharedRoutes from './routes/shared.js';
+import profileRoutes from './routes/profile.js';
 
+dotenv.config();
 
+const app = express();
+const PORT = process.env.PORT || 10000;
 
-const PORT = process.env.PORT || 3000;
-
-const app = express()
-
-app.use(express.json());
-
-app.use("/api/ecouser", authRoutes)
-
-// app.get('/', (req, res) => {
-//   res.send('Hello from Node API server cleaned!')
-// });
-
+// Connect to MongoDB
 connectDB();
 
- app.listen(PORT, () => {
-  console.log(`Server is running on PORT ${PORT}`);
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api', sharedRoutes);
+
+// Basic route
+app.get('/', (req, res) => {
+  res.json({ message: 'Student Attendance Management System API' });
 });
-// app.get('/api/products', async (req, res) => {
-//   try {
-//     const products = await Product.find({});
-//     res.status(200).json(products);
-//   } catch (error) {
-//     // console.error("Error fetching products:", error);
-//     res.status(500).json({message: error.message});
-//   }
-// });
 
-// app.get('/api/products/:id', async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const product = await Product.findById(id);
-//     res.status(200).json(product);
-//   } catch (error) {
-//     // console.error("Error fetching product:", error);
-//     res.status(500).json({message: error.message});
-//   }
-// });
-
-// app.post("/api/products", async (req, res) => {
-//   try {
-//     const product = await Product.create(req.body);
-//     res.status(200).json(product);
-//   } catch (error) {
-//     // console.error("Error creating product:", error);
-//     res.status(500).json({message: error.message});
-//   }
-// });
-
-// //update product by id
-// app.put("/api/products/:id", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const product = await Product.findByIdAndUpdate(id, req.body);
-//     if (!product) {
-//       return res.status(404).json({ message: `Cannot find product with ID ${id}` });
-//     }
-//     const updatedProduct = await Product.findById(id);
-//     res.status(200).json(updatedProduct);
-//   } catch (error) {
-//     // console.error("Error updating product:", error);
-//     res.status(500).json({message: error.message});
-//   }
-// });
-
-
-// //delete product by id
-// app.delete("/api/products/:id", async (req, res) => {
-//   try { 
-//     const { id } = req.params;
-//     const product = await Product.findByIdAndDelete(id);  
-//     if (!product) {
-//       return res.status(404).json({ message: `Cannot find product with ID ${id}` });
-//     }
-//     res.status(200).json({message: "Product deleted successfully" });
-//   } catch (error) {
-//     // console.error("Error deleting product:", error);
-//     res.status(500).json({message: error.message});
-//   }
-// });
-
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

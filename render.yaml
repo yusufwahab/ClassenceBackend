@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: classence-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: attendance_system
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_CODE
+        value: ADMIN_SECRET_2024

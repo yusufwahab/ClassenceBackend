@@ -1,32 +1,54 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
-email: { type: String, required: true, unique: true },
-firstName: { type: String, required: true, unique: false },
-lastName: { type: String, required: true, unique: false },
-phone: { type: String, required: true, unique: true },
-organization: { type: String, required: true, unique: false },
-location: { type: String, required: true, unique: false },
-agreeTerms: { type: Boolean, default: false },
-
-password: { type: String, required: true },
-createdAt: { type: Date, default: Date.now }
+  firstName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+  matricNumber: {
+    type: String,
+    required: function() { return this.role === 'student'; },
+    unique: true,
+    sparse: true,
+    trim: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['student', 'admin'],
+    required: true
+  },
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: true
+  },
+  signatureImage: {
+    type: String, // Base64 string or URL
+    required: false // Will be added later during profile completion
+  },
+  profileCompleted: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true
 });
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-}
-
-const User = mongoose.model('User', userSchema);
-
-export default User;
+export default mongoose.model('User', userSchema);
