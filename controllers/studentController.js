@@ -21,6 +21,7 @@ export const getDashboard = async (req, res) => {
       user: {
         firstName: user.firstName,
         lastName: user.lastName,
+        matricNumber: user.matricNumber,
         departmentName: user.departmentId.name
       },
       todayAttendance: {
