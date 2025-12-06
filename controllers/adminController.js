@@ -21,9 +21,16 @@ export const getDashboard = async (req, res) => {
       departmentId: req.user.departmentId,
       role: 'student'
     })
-    .select('firstName lastName email createdAt')
+    .select('firstName lastName middleName email createdAt')
     .sort({ createdAt: -1 })
     .limit(5);
+
+    const recentStudentsWithFullName = recentStudents.map(student => ({
+      ...student.toObject(),
+      name: student.middleName ? 
+        `${student.firstName} ${student.middleName} ${student.lastName}` : 
+        `${student.firstName} ${student.lastName}`
+    }));
 
     res.json({
       departmentName: department.name,
@@ -32,7 +39,7 @@ export const getDashboard = async (req, res) => {
         present: todayPresent,
         absent: totalStudents - todayPresent
       },
-      recentStudents
+      recentStudents: recentStudentsWithFullName
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -44,7 +51,7 @@ export const getStudents = async (req, res) => {
     const students = await User.find({
       departmentId: req.user.departmentId,
       role: 'student'
-    }).select('firstName lastName email matricNumber profileCompleted');
+    }).select('firstName lastName middleName email matricNumber profileCompleted');
 
     const studentsWithAttendance = await Promise.all(
       students.map(async (student) => {
@@ -58,7 +65,11 @@ export const getStudents = async (req, res) => {
 
         return {
           id: student._id,
+          name: student.middleName ? 
+            `${student.firstName} ${student.middleName} ${student.lastName}` : 
+            `${student.firstName} ${student.lastName}`,
           firstName: student.firstName,
+          middleName: student.middleName,
           lastName: student.lastName,
           email: student.email,
           matricNumber: student.matricNumber,

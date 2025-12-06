@@ -6,6 +6,16 @@ const attendanceSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  sessionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AttendanceSession',
+    required: true
+  },
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
+    required: true
+  },
   name: {
     type: String,
     required: true
@@ -35,7 +45,7 @@ const attendanceSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to prevent duplicate attendance entries
-attendanceSchema.index({ studentId: 1, date: 1 }, { unique: true });
+// Compound index to prevent duplicate attendance entries per session
+attendanceSchema.index({ studentId: 1, sessionId: 1 }, { unique: true });
 
 export default mongoose.model('Attendance', attendanceSchema);

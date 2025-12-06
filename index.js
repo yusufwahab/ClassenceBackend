@@ -8,6 +8,8 @@ import studentRoutes from './routes/student.js';
 import adminRoutes from './routes/admin.js';
 import sharedRoutes from './routes/shared.js';
 import profileRoutes from './routes/profile.js';
+import subjectRoutes from './routes/subject.js';
+import subjectAttendanceRoutes from './routes/subjectAttendance.js';
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api', subjectRoutes);
+app.use('/api/subject-attendance', subjectAttendanceRoutes);
 app.use('/api', sharedRoutes);
 
 // Basic route

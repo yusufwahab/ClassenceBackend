@@ -1,16 +1,36 @@
 import express from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
-import { getDashboard, getStudents, getTodayAttendance, postUpdate, editUpdate, getAdminUpdates, deleteUpdate, exportAttendance } from '../controllers/adminController.js';
+import {
+  getDashboard,
+  getStudents,
+  getTodayAttendance,
+  postUpdate,
+  editUpdate,
+  getAdminUpdates,
+  deleteUpdate,
+  exportAttendance
+} from '../controllers/adminController.js';
 
 const router = express.Router();
 
-router.get('/dashboard', authenticateToken, requireAdmin, getDashboard);
-router.get('/students', authenticateToken, requireAdmin, getStudents);
-router.get('/attendance/today', authenticateToken, requireAdmin, getTodayAttendance);
-router.post('/updates', authenticateToken, requireAdmin, postUpdate);
-router.get('/updates', authenticateToken, requireAdmin, getAdminUpdates);
-router.put('/updates/:id', authenticateToken, requireAdmin, editUpdate);
-router.delete('/updates/:id', authenticateToken, requireAdmin, deleteUpdate);
-router.get('/attendance/export', authenticateToken, requireAdmin, exportAttendance);
+// Apply authentication middleware to all admin routes
+router.use(authenticateToken);
+router.use(requireAdmin);
+
+// Dashboard
+router.get('/dashboard', getDashboard);
+
+// Students management
+router.get('/students', getStudents);
+
+// Attendance
+router.get('/attendance/today', getTodayAttendance);
+router.get('/attendance/export', exportAttendance);
+
+// Updates management
+router.post('/updates', postUpdate);
+router.get('/updates', getAdminUpdates);
+router.put('/updates/:id', editUpdate);
+router.delete('/updates/:id', deleteUpdate);
 
 export default router;

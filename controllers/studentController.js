@@ -110,3 +110,55 @@ export const getUpdates = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const getAttendanceLog = async (req, res) => {
+  try {
+    const attendanceRecords = await Attendance.find({
+      studentId: req.user.userId
+    }).sort({ date: -1 });
+
+    const attendanceLog = attendanceRecords.map(record => ({
+      id: record._id,
+      date: record.date,
+      timeMarked: record.timeIn.toISOString(),
+      status: 'present'
+    }));
+
+    // Calculate stats
+    const totalPresent = attendanceRecords.length;
+    
+    // This month count
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const thisMonth = attendanceRecords.filter(record => {
+      const recordDate = new Date(record.timeIn);
+      return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+    }).length;
+
+    // Calculate average time
+    let averageTime = '9:00 AM';
+    if (attendanceRecords.length > 0) {
+      const totalMinutes = attendanceRecords.reduce((sum, record) => {
+        const time = new Date(record.timeIn);
+        return sum + (time.getHours() * 60 + time.getMinutes());
+      }, 0);
+      const avgMinutes = Math.round(totalMinutes / attendanceRecords.length);
+      const avgHours = Math.floor(avgMinutes / 60);
+      const avgMins = avgMinutes % 60;
+      const period = avgHours >= 12 ? 'PM' : 'AM';
+      const displayHour = avgHours > 12 ? avgHours - 12 : (avgHours === 0 ? 12 : avgHours);
+      averageTime = `${displayHour}:${avgMins.toString().padStart(2, '0')} ${period}`;
+    }
+
+    res.json({
+      attendanceLog,
+      stats: {
+        totalPresent,
+        thisMonth,
+        averageTime
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
