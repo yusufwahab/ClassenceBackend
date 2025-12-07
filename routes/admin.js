@@ -10,6 +10,7 @@ import {
   deleteUpdate,
   exportAttendance
 } from '../controllers/adminController.js';
+import { createSubject, createAttendanceSession } from '../controllers/subjectController.js';
 
 const router = express.Router();
 
@@ -32,5 +33,9 @@ router.post('/updates', postUpdate);
 router.get('/updates', getAdminUpdates);
 router.put('/updates/:id', editUpdate);
 router.delete('/updates/:id', deleteUpdate);
+
+// Subjects and attendance sessions
+router.post('/subjects', createSubject);
+router.post('/attendance-sessions', createAttendanceSession);
 
 export default router;

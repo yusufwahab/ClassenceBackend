@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Department from '../models/Department.js';
+import { sendVerificationEmail, generateVerificationCode } from '../utils/emailService.js';
 
 export const register = async (req, res) => {
   try {
@@ -28,6 +29,9 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const verificationCode = generateVerificationCode();
+    const codeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     const user = new User({
       firstName,
       lastName,
@@ -37,15 +41,29 @@ export const register = async (req, res) => {
       password: hashedPassword,
       role: 'student',
       departmentId,
-      profileCompleted: false
+      profileCompleted: false,
+      isEmailVerified: false,
+      verificationCode,
+      verificationCodeExpires: codeExpires
     });
 
     await user.save();
 
+    // Send verification email
+    try {
+      console.log(`Sending verification email to ${email} with code ${verificationCode}`);
+      await sendVerificationEmail(email, verificationCode, firstName);
+      console.log('✅ Verification email sent successfully');
+    } catch (emailError) {
+      console.error('❌ Email sending failed:', emailError.message);
+      // Continue registration even if email fails
+    }
+
     res.status(201).json({ 
-      message: 'Student registered successfully. Please complete your profile.',
+      message: 'Registration successful! Please check your email for verification code.',
       userId: user._id,
-      requiresSignature: true
+      email: user.email,
+      requiresVerification: true
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -97,13 +115,31 @@ export const registerAdmin = async (req, res) => {
 
     const savedDepartment = await department.save();
 
-    // Update admin with correct department ID
+    // Update admin with correct department ID and add verification
+    const verificationCode = generateVerificationCode();
+    const codeExpires = new Date(Date.now() + 10 * 60 * 1000);
+    
     savedAdmin.departmentId = savedDepartment._id;
+    savedAdmin.isEmailVerified = false;
+    savedAdmin.verificationCode = verificationCode;
+    savedAdmin.verificationCodeExpires = codeExpires;
     await savedAdmin.save();
 
+    // Send verification email
+    try {
+      console.log(`Sending admin verification email to ${email} with code ${verificationCode}`);
+      await sendVerificationEmail(email, verificationCode, firstName);
+      console.log('✅ Admin verification email sent successfully');
+    } catch (emailError) {
+      console.error('❌ Admin email sending failed:', emailError.message);
+    }
+
     res.status(201).json({
-      message: 'Admin registered successfully',
-      departmentId: savedDepartment._id
+      message: 'Admin registered successfully! Please check your email for verification code.',
+      userId: savedAdmin._id,
+      email: savedAdmin.email,
+      departmentId: savedDepartment._id,
+      requiresVerification: true
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -126,6 +162,15 @@ export const login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({ 
+        message: 'Please verify your email before logging in',
+        requiresVerification: true,
+        userId: user._id,
+        email: user.email
+      });
     }
 
     const token = jwt.sign(
