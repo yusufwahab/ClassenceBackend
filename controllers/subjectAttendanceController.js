@@ -21,18 +21,21 @@ export const createSubjectSession = async (req, res) => {
       return res.status(404).json({ message: 'Subject not found' });
     }
 
+    console.log('Received startTime:', startTime);
+    console.log('Received endTime:', endTime);
+    
+    // Frontend sends times with Nigeria timezone offset, store as-is
     const startDateTime = new Date(startTime);
     const endDateTime = new Date(endTime);
-    const nigeriaTime = new Date(new Date().getTime() + (1 * 60 * 60 * 1000));
-    const today = nigeriaTime.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+
+    console.log('Stored startDateTime:', startDateTime.toISOString());
+    console.log('Stored endDateTime:', endDateTime.toISOString());
+    console.log('Today (UTC):', today);
 
     // Validate times
     if (startDateTime >= endDateTime) {
       return res.status(400).json({ message: 'Start time must be before end time' });
-    }
-
-    if (endDateTime <= nigeriaTime) {
-      return res.status(400).json({ message: 'End time must be in the future' });
     }
 
     const session = new AttendanceSession({
@@ -88,8 +91,7 @@ export const getSubjectSessions = async (req, res) => {
 
 export const getSubjectAttendanceToday = async (req, res) => {
   try {
-    const nigeriaTime = new Date(new Date().getTime() + (1 * 60 * 60 * 1000));
-    const today = nigeriaTime.toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
 
     // Get all sessions for today in admin's department
     const departmentSessions = await AttendanceSession.find({
@@ -164,9 +166,25 @@ export const fixAttendanceIndexes = async (req, res) => {
       console.log('Correct index may already exist:', error.message);
     }
 
+    // Drop unique index from AttendanceSession to allow multiple sessions per subject per day
+    try {
+      await AttendanceSession.collection.dropIndex({ subjectId: 1, date: 1 });
+      console.log('✅ Dropped unique subjectId_1_date_1 index from AttendanceSession');
+    } catch (error) {
+      console.log('Session index may not exist:', error.message);
+    }
+
+    // Create non-unique index for performance
+    try {
+      await AttendanceSession.collection.createIndex({ subjectId: 1, date: 1 });
+      console.log('✅ Created non-unique subjectId_1_date_1 index');
+    } catch (error) {
+      console.log('Non-unique index may already exist:', error.message);
+    }
+
     res.json({ 
-      message: 'Database indexes fixed! You can now mark attendance for multiple subjects per day.',
-      details: 'Dropped old (studentId + date) index, ensured (studentId + sessionId) index exists'
+      message: 'Database indexes fixed! You can now create multiple sessions per subject per day.',
+      details: 'Fixed both Attendance and AttendanceSession indexes'
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -176,12 +194,13 @@ export const fixAttendanceIndexes = async (req, res) => {
 export const markSubjectAttendance = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const now = new Date();
-    const nigeriaTime = new Date(now.getTime() + (1 * 60 * 60 * 1000));
+    
+    const currentTime = new Date();
 
     console.log('=== SUBJECT ATTENDANCE MARKING ===');
     console.log('Student ID:', req.user.userId);
     console.log('Session ID:', sessionId);
+    console.log('Current Time:', currentTime.toISOString());
 
     // Get session details
     const session = await AttendanceSession.findById(sessionId)
@@ -192,22 +211,24 @@ export const markSubjectAttendance = async (req, res) => {
     }
 
     console.log('Session found:', session.subjectId.name);
+    console.log('Session Start Time:', session.startTime.toISOString());
+    console.log('Session End Time:', session.endTime.toISOString());
+    console.log('Is Active:', session.isActive);
+    console.log('Time check: Current >= Start?', currentTime >= session.startTime);
+    console.log('Time check: Current <= End?', currentTime <= session.endTime);
 
     // Verify session is for user's department
     if (session.subjectId.departmentId.toString() !== req.user.departmentId.toString()) {
       return res.status(403).json({ message: 'Access denied to this session' });
     }
 
-    // Check if session is active and within time limits
+    // Check if session is active
     if (!session.isActive) {
       return res.status(400).json({ message: 'Subject attendance session is not active' });
     }
 
-    if (nigeriaTime < session.startTime) {
-      return res.status(400).json({ message: 'Subject attendance session has not started yet' });
-    }
-
-    if (nigeriaTime > session.endTime) {
+    // Check if session has ended
+    if (currentTime > session.endTime) {
       return res.status(400).json({ message: 'Subject attendance session has ended' });
     }
 
@@ -248,7 +269,7 @@ export const markSubjectAttendance = async (req, res) => {
       matricNumber: student.matricNumber,
       signatureImage: student.signatureImage,
       date: session.date,
-      timeIn: nigeriaTime,
+      timeIn: currentTime,
       status: 'present'
     });
 
@@ -283,9 +304,8 @@ export const markSubjectAttendance = async (req, res) => {
 
 export const getActiveSubjectSessions = async (req, res) => {
   try {
-    const now = new Date();
-    const nigeriaTime = new Date(now.getTime() + (1 * 60 * 60 * 1000));
-    const today = nigeriaTime.toISOString().split('T')[0];
+    const currentTime = new Date();
+    const today = currentTime.toISOString().split('T')[0];
 
     // Get all sessions for today that are active
     const allSessions = await AttendanceSession.find({
@@ -299,7 +319,7 @@ export const getActiveSubjectSessions = async (req, res) => {
     const validSessions = allSessions.filter(session => {
       return session.subjectId && 
              session.subjectId.departmentId.toString() === req.user.departmentId.toString() &&
-             session.endTime >= nigeriaTime;
+             session.endTime >= currentTime;
     });
 
     const sessionsWithStatus = await Promise.all(
@@ -318,7 +338,7 @@ export const getActiveSubjectSessions = async (req, res) => {
           startTime: session.startTime,
           endTime: session.endTime,
           hasAttended: !!hasAttended,
-          timeRemaining: Math.max(0, Math.floor((session.endTime - nigeriaTime) / 1000 / 60))
+          timeRemaining: Math.max(0, Math.floor((session.endTime - currentTime) / 1000 / 60))
         };
       })
     );
@@ -349,14 +369,9 @@ export const editSubjectSession = async (req, res) => {
 
     const startDateTime = new Date(startTime);
     const endDateTime = new Date(endTime);
-    const nigeriaTime = new Date(new Date().getTime() + (1 * 60 * 60 * 1000));
 
     if (startDateTime >= endDateTime) {
       return res.status(400).json({ message: 'Start time must be before end time' });
-    }
-
-    if (endDateTime <= nigeriaTime) {
-      return res.status(400).json({ message: 'End time must be in the future' });
     }
 
     session.startTime = startDateTime;

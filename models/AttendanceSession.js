@@ -31,7 +31,7 @@ const attendanceSessionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to prevent duplicate sessions for same subject on same date
-attendanceSessionSchema.index({ subjectId: 1, date: 1 }, { unique: true });
+// Index for faster queries (non-unique to allow multiple sessions per day)
+attendanceSessionSchema.index({ subjectId: 1, date: 1 });
 
 export default mongoose.model('AttendanceSession', attendanceSessionSchema);
